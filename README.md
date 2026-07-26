@@ -56,7 +56,7 @@ Infrastructure:
 ## Repository Structure
 
 ```text
-Full-stack-badge/
+Employee-Task-Management-System/
   backend/                # API service
   frontend/               # React application
   documents/              # Curated engineering documentation

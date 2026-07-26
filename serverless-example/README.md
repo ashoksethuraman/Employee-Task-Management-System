@@ -36,5 +36,4 @@ npm run build
 azd auth login
 azd up
 ```
-
-This is a proof-of-capability artifact for badge submission to demonstrate serverless-ready backend design.
+.
