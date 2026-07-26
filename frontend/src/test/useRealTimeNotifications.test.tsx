@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRealTimeNotifications } from '../hooks/useRealTimeNotifications';
+import { TASK_DATA_REFRESH_EVENT } from '../constants/realtimeEvents';
 
 const {
   connectMock,
@@ -67,8 +68,12 @@ describe('useRealTimeNotifications', () => {
   it('connects, listens, dispatches and toasts on notification', () => {
     useAuthMock.mockReturnValue({ user: { id: 7 } });
     localStorage.setItem('token', 'jwt-token');
+    const unsubscribeMock = vi.fn();
+    onMock.mockReturnValue(unsubscribeMock);
 
-    renderHook(() => useRealTimeNotifications());
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
+
+    const { unmount } = renderHook(() => useRealTimeNotifications());
 
     expect(connectMock).toHaveBeenCalledWith('jwt-token');
     expect(onMock).toHaveBeenCalledWith('notification', expect.any(Function));
@@ -95,5 +100,55 @@ describe('useRealTimeNotifications', () => {
       position: 'top-right',
       duration: 5000
     });
+
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: TASK_DATA_REFRESH_EVENT,
+      })
+    );
+
+    unmount();
+    expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(disconnectMock).toHaveBeenCalledTimes(1);
+
+    dispatchEventSpy.mockRestore();
+  });
+
+  it('does not dispatch task refresh event for non-task notification types', () => {
+    useAuthMock.mockReturnValue({ user: { id: 7 } });
+    localStorage.setItem('token', 'jwt-token');
+    onMock.mockReturnValue(vi.fn());
+
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
+
+    renderHook(() => useRealTimeNotifications());
+
+    const callback = onMock.mock.calls[0][1];
+    callback({
+      id: 2,
+      type: 'SYSTEM_ALERT',
+      message: 'System message',
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+
+    expect(dispatchEventSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: TASK_DATA_REFRESH_EVENT,
+      })
+    );
+
+    dispatchEventSpy.mockRestore();
+  });
+
+  it('cleanup still disconnects when on returns no unsubscribe function', () => {
+    useAuthMock.mockReturnValue({ user: { id: 11 } });
+    localStorage.setItem('token', 'jwt-token');
+    onMock.mockReturnValue(undefined);
+
+    const { unmount } = renderHook(() => useRealTimeNotifications());
+    unmount();
+
+    expect(disconnectMock).toHaveBeenCalledTimes(1);
   });
 });
