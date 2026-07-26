@@ -1,0 +1,6 @@
+name: task-events-functions
+services:
+  task-events-api:
+    project: .
+    language: ts
+    host: function
