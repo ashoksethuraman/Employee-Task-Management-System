@@ -1,5 +1,5 @@
 import winston from 'winston';
-import { getCorrelationId } from '@requestkit/correlation-id';
+import { getCorrelationId } from '@ashok92/correlation-id';
 
 const addCorrelationId = winston.format((info) => {
   const correlationId = getCorrelationId();

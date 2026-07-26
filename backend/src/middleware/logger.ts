@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getCorrelationId } from '@requestkit/correlation-id';
+import { getCorrelationId } from '@ashok92/correlation-id';
 import { logger } from '../utils/logger';
 import { sanitizeHeaders, sanitizeValue } from '../utils/logSanitizer';
 

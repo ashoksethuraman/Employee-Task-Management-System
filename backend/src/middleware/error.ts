@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from './appError';
-import { getCorrelationId } from '@requestkit/correlation-id';
+import { getCorrelationId } from '@ashok92/correlation-id';
 import { logger } from '../utils/logger';
 
 export function notFound(req: Request, res: Response) {

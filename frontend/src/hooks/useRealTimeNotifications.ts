@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { useAppDispatch } from '../store/hooks';
 import { addNotification, type Notification } from '../store/slices/notificationSlice';
 import { socketService } from '../services/socketService';
+import { TASK_DATA_REFRESH_EVENT, type TaskDataRefreshDetail } from '../constants/realtimeEvents';
 import toast from 'react-hot-toast';
 
 export function useRealTimeNotifications() {
@@ -22,9 +23,18 @@ export function useRealTimeNotifications() {
     socketService.connect(token);
 
     // Listen for notifications
-    socketService.on('notification', (notification: Notification) => {
+    const unsubscribe = socketService.on('notification', (notification: Notification) => {
       console.log('📢 Notification event triggered:', notification);
       dispatch(addNotification(notification));
+
+      if (notification.type.startsWith('TASK_')) {
+        const detail: TaskDataRefreshDetail = {
+          taskId: notification.taskId,
+          reason: 'notification',
+          notificationType: notification.type,
+        };
+        window.dispatchEvent(new CustomEvent(TASK_DATA_REFRESH_EVENT, { detail }));
+      }
       
       // Show toast
       toast.success(`✨ ${notification.message}`, {
@@ -34,6 +44,9 @@ export function useRealTimeNotifications() {
     });
 
     return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
       socketService.disconnect();
     };
   }, [user, dispatch]);

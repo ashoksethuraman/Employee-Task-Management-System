@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart3, CheckCircle2, Circle, AlertCircle, Users } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { TASK_DATA_REFRESH_EVENT } from '../constants/realtimeEvents';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
@@ -34,9 +35,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchData(showLoader = true) {
       try {
-        setLoading(true);
+        if (showLoader) {
+          setLoading(true);
+        }
         const [tasksRes, summaryRes] = await Promise.all([
           api.get('/tasks'),
           api.get('/dashboard/summary'),
@@ -46,10 +49,22 @@ export default function DashboardPage() {
       } catch (err: any) {
         setError(err.response?.data?.message || 'Could not load dashboard');
       } finally {
-        setLoading(false);
+        if (showLoader) {
+          setLoading(false);
+        }
       }
     }
+
     fetchData();
+
+    function handleTaskDataRefresh() {
+      fetchData(false);
+    }
+
+    window.addEventListener(TASK_DATA_REFRESH_EVENT, handleTaskDataRefresh as EventListener);
+    return () => {
+      window.removeEventListener(TASK_DATA_REFRESH_EVENT, handleTaskDataRefresh as EventListener);
+    };
   }, []);
 
   const totalTasks = summary.totalTasks || tasks.length;

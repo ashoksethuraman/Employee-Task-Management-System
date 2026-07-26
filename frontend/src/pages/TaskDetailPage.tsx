@@ -4,6 +4,7 @@ import api from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { useAuth } from '../hooks/useAuth';
+import { TASK_DATA_REFRESH_EVENT, type TaskDataRefreshDetail } from '../constants/realtimeEvents';
 
 interface Comment {
   id: number;
@@ -41,19 +42,39 @@ export default function TaskDetailPage() {
   const statusOptions = ['PENDING', 'IN_PROGRESS', 'DONE'];
 
   useEffect(() => {
-    async function loadTask() {
+    async function loadTask(showLoader = true) {
       if (!id) return;
       try {
-        setLoading(true);
+        if (showLoader) {
+          setLoading(true);
+        }
         const response = await api.get(`/tasks/${id}`);
         setTask(response.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Unable to load task details');
       } finally {
-        setLoading(false);
+        if (showLoader) {
+          setLoading(false);
+        }
       }
     }
+
+    function handleTaskDataRefresh(event: Event) {
+      const refreshEvent = event as CustomEvent<TaskDataRefreshDetail>;
+      const eventTaskId = refreshEvent.detail?.taskId;
+
+      if (eventTaskId !== undefined && String(eventTaskId) !== id) {
+        return;
+      }
+
+      loadTask(false);
+    }
+
     loadTask();
+    window.addEventListener(TASK_DATA_REFRESH_EVENT, handleTaskDataRefresh as EventListener);
+    return () => {
+      window.removeEventListener(TASK_DATA_REFRESH_EVENT, handleTaskDataRefresh as EventListener);
+    };
   }, [id]);
 
   async function handleCommentSubmit() {
@@ -213,20 +234,23 @@ export default function TaskDetailPage() {
                       <p className="mt-4 text-sm text-slate-500">No comments yet.</p>
                     ) : (
                       <ul className="relative mt-4 space-y-4 before:absolute before:bottom-2 before:left-[14px] before:top-2 before:w-px before:bg-slate-200">
-                        {task.comments.map((comment) => (
-                          <li key={comment.id} className="relative pl-10">
-                            <span className="absolute left-0 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
-                              {comment.user.name.slice(0, 1).toUpperCase()}
-                            </span>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-slate-900">{comment.user.name}</p>
-                                <span className="text-xs text-slate-500">{new Date(comment.createdAt).toLocaleString()}</span>
+                        {task.comments.map((comment) => {
+                          const commentAuthorName = comment.user?.name ?? 'Unknown user';
+                          return (
+                            <li key={comment.id} className="relative pl-10">
+                              <span className="absolute left-0 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                                {commentAuthorName.slice(0, 1).toUpperCase()}
+                              </span>
+                              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-sm font-semibold text-slate-900">{commentAuthorName}</p>
+                                  <span className="text-xs text-slate-500">{new Date(comment.createdAt).toLocaleString()}</span>
+                                </div>
+                                <p className="mt-2 text-sm leading-6 text-slate-700">{comment.body}</p>
                               </div>
-                              <p className="mt-2 text-sm leading-6 text-slate-700">{comment.body}</p>
-                            </div>
-                          </li>
-                        ))}
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { TASK_DATA_REFRESH_EVENT } from '../constants/realtimeEvents';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
@@ -49,6 +50,15 @@ export default function TasksPage() {
       }
     }
     loadData();
+
+    function handleTaskDataRefresh() {
+      loadData();
+    }
+
+    window.addEventListener(TASK_DATA_REFRESH_EVENT, handleTaskDataRefresh as EventListener);
+    return () => {
+      window.removeEventListener(TASK_DATA_REFRESH_EVENT, handleTaskDataRefresh as EventListener);
+    };
   }, [user]);
 
   async function handleCreate() {

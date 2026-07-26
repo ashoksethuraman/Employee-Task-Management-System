@@ -15,7 +15,8 @@ async function getDefaultProject() {
 }
 
 export async function getTasksForUser(userId: number, role: string) {
-  const filter = role === 'ADMIN' ? {} : { assigneeId: userId };
+  const canViewAllTasks = role === 'ADMIN' || role === 'MANAGER';
+  const filter = canViewAllTasks ? {} : { assigneeId: userId };
   return prisma.task.findMany({
     where: filter,
     include: { assignee: true, creator: true, comments: true, project: true },
@@ -60,7 +61,7 @@ export async function updateTask(taskId: number, values: Partial<{ title: string
   return prisma.task.update({
     where: { id: taskId },
     data,
-    include: { assignee: true, creator: true, project: true, comments: true },
+    include: { assignee: true, creator: true, project: true, comments: { include: { user: true } } },
   });
 }
 

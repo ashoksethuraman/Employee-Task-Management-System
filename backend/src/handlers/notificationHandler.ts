@@ -1,7 +1,14 @@
 import { eventBus } from '../services/eventBusService';
 import prisma from '../utils/prisma';
 
+let isNotificationHandlerSetup = false;
+
 export function setupNotificationHandler() {
+  if (isNotificationHandlerSetup) {
+    return;
+  }
+  isNotificationHandlerSetup = true;
+
   eventBus.subscribe('task.created', async (event) => {
     console.log('\n🔔 [Handler] Creating notification...');
 

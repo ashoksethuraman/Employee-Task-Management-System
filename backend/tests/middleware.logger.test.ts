@@ -5,7 +5,7 @@ jest.mock('../src/utils/logger', () => ({
   }
 }));
 
-jest.mock('@requestkit/correlation-id', () => ({
+jest.mock('@ashok92/correlation-id', () => ({
   getCorrelationId: jest.fn(() => 'corr-test-123')
 }));
 

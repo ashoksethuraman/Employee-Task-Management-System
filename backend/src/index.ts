@@ -15,7 +15,7 @@ import { loadEnv } from './utils/env';
 import { eventBus } from './services/eventBusService';
 import { setupNotificationHandler } from './handlers/notificationHandler';
 import { verifyJWT } from './utils/jwt';
-import { correlationMiddleware, getCorrelationId } from '@requestkit/correlation-id';
+import { correlationMiddleware, getCorrelationId } from '@ashok92/correlation-id';
 import { logger } from './utils/logger';
 
 loadEnv();
