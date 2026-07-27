@@ -1,0 +1,116 @@
+name: CD (Manual Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      push_images:
+        description: "Push images to GHCR (requires package permissions)"
+        required: false
+        type: boolean
+        default: false
+      run_deploy_placeholder:
+        description: "Run deploy placeholder step"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: cd-manual-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
+
+jobs:
+  validate-docker-builds:
+    name: Validate Docker Builds
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            dockerfile: backend/Dockerfile
+          - service: frontend
+            dockerfile: frontend/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service }} image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: |
+            ${{ matrix.service }}:manual-${{ github.run_number }}
+            ${{ matrix.service }}:manual-latest
+
+      - name: Verify ${{ matrix.service }} image exists
+        run: docker image inspect ${{ matrix.service }}:manual-${{ github.run_number }} > /dev/null
+
+  publish-images:
+    name: Publish Images (Optional)
+    runs-on: ubuntu-latest
+    needs: validate-docker-builds
+    if: ${{ inputs.push_images == true }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/etm-backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/etm-backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/etm-frontend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/etm-frontend:latest
+
+  deploy-template:
+    name: Deploy Placeholder (Off by Default)
+    runs-on: ubuntu-latest
+    needs:
+      - validate-docker-builds
+    if: ${{ always() && inputs.run_deploy_placeholder == true }}
+    environment: production
+
+    steps:
+      - name: Deployment placeholder
+        run: |
+          echo "This repository uses a manual-only CD template."
+          echo "No real deployment command is configured yet."
+          echo "When infra is ready, add deploy commands here (SSH/kubectl/compose)."
