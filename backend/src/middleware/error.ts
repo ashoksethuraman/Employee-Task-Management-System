@@ -8,7 +8,7 @@ export function notFound(req: Request, res: Response) {
   res.status(404).json({ message: 'Route not found' });
 }
 
-export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof ZodError) {
     return res.status(400).json({ message: 'Validation failed', errors: err.errors });
   }

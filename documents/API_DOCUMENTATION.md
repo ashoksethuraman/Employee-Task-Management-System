@@ -6,6 +6,15 @@
 **ORM:** Prisma 5.x  
 **Authentication:** JWT Bearer Token
 
+## Machine-Readable API Contracts
+
+- Swagger UI: `http://localhost:5000/api/docs`
+- OpenAPI YAML: `http://localhost:5000/api/docs/openapi.yaml`
+- Event catalog (AsyncAPI YAML): `http://localhost:5000/api/docs/asyncapi.yaml`
+
+The endpoint reference below is human-readable documentation. Use OpenAPI for contract tooling
+(SDK generation, automated validation, and API testing) and AsyncAPI for event contracts.
+
 ---
 
 ## 📋 Table of Contents

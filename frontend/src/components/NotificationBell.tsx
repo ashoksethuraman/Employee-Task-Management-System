@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, X, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { removeNotification, markAsRead } from '../store/slices/notificationSlice';
 
@@ -85,7 +85,7 @@ export function NotificationBell() {
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
-              {notifications.map((notification, idx) => (
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`border-b border-gray-100 px-6 py-4 hover:bg-blue-50 transition-colors cursor-pointer ${

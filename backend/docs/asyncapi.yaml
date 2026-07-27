@@ -1,0 +1,207 @@
+asyncapi: 2.6.0
+info:
+  title: Employee Task Management Events
+  version: 1.0.0
+  description: |
+    Event catalog for backend domain events.
+
+    Note:
+    - task.created is currently emitted by the application.
+    - Other channels are defined as contract targets and should be emitted when those behaviors are implemented.
+defaultContentType: application/json
+
+servers:
+  local-event-bus:
+    protocol: inmemory
+    description: In-process event bus used by backend/services/eventBusService.ts
+
+channels:
+  task.created:
+    description: Fired after a new task is created and assigned.
+    publish:
+      operationId: onTaskCreated
+      summary: Producer emits task created events.
+      message:
+        $ref: '#/components/messages/TaskCreatedMessage'
+      x-implemented: true
+
+  task.updated:
+    description: Fired after a task is updated.
+    publish:
+      operationId: onTaskUpdated
+      summary: Producer emits task updated events.
+      message:
+        $ref: '#/components/messages/TaskUpdatedMessage'
+      x-implemented: false
+
+  task.deleted:
+    description: Fired after a task is deleted.
+    publish:
+      operationId: onTaskDeleted
+      summary: Producer emits task deleted events.
+      message:
+        $ref: '#/components/messages/TaskDeletedMessage'
+      x-implemented: false
+
+  comment.created:
+    description: Fired after a comment is added to a task.
+    publish:
+      operationId: onCommentCreated
+      summary: Producer emits comment created events.
+      message:
+        $ref: '#/components/messages/CommentCreatedMessage'
+      x-implemented: false
+
+  user.registered:
+    description: Fired after a new user account is registered.
+    publish:
+      operationId: onUserRegistered
+      summary: Producer emits user registered events.
+      message:
+        $ref: '#/components/messages/UserRegisteredMessage'
+      x-implemented: false
+
+components:
+  messages:
+    TaskCreatedMessage:
+      name: TaskCreatedMessage
+      title: task.created
+      payload:
+        $ref: '#/components/schemas/TaskCreatedEvent'
+
+    TaskUpdatedMessage:
+      name: TaskUpdatedMessage
+      title: task.updated
+      payload:
+        $ref: '#/components/schemas/TaskUpdatedEvent'
+
+    TaskDeletedMessage:
+      name: TaskDeletedMessage
+      title: task.deleted
+      payload:
+        $ref: '#/components/schemas/TaskDeletedEvent'
+
+    CommentCreatedMessage:
+      name: CommentCreatedMessage
+      title: comment.created
+      payload:
+        $ref: '#/components/schemas/CommentCreatedEvent'
+
+    UserRegisteredMessage:
+      name: UserRegisteredMessage
+      title: user.registered
+      payload:
+        $ref: '#/components/schemas/UserRegisteredEvent'
+
+  schemas:
+    BaseEvent:
+      type: object
+      required: [eventType, occurredAt]
+      properties:
+        eventType:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+          description: Request correlation id used for tracing.
+
+    TaskCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required: [taskId, assigneeId, creatorId, title]
+          properties:
+            eventType:
+              type: string
+              const: task.created
+            taskId:
+              type: integer
+              minimum: 1
+            assigneeId:
+              type: integer
+              minimum: 1
+            creatorId:
+              type: integer
+              minimum: 1
+            creatorName:
+              type: string
+            title:
+              type: string
+
+    TaskUpdatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required: [taskId, updatedFields]
+          properties:
+            eventType:
+              type: string
+              const: task.updated
+            taskId:
+              type: integer
+              minimum: 1
+            updatedFields:
+              type: array
+              items:
+                type: string
+            status:
+              type: string
+              enum: [PENDING, IN_PROGRESS, DONE]
+            assigneeId:
+              type: integer
+              minimum: 1
+
+    TaskDeletedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required: [taskId]
+          properties:
+            eventType:
+              type: string
+              const: task.deleted
+            taskId:
+              type: integer
+              minimum: 1
+
+    CommentCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required: [commentId, taskId, userId, body]
+          properties:
+            eventType:
+              type: string
+              const: comment.created
+            commentId:
+              type: integer
+              minimum: 1
+            taskId:
+              type: integer
+              minimum: 1
+            userId:
+              type: integer
+              minimum: 1
+            body:
+              type: string
+
+    UserRegisteredEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required: [userId, email, role]
+          properties:
+            eventType:
+              type: string
+              const: user.registered
+            userId:
+              type: integer
+              minimum: 1
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+              enum: [ADMIN, MANAGER, EMPLOYEE]

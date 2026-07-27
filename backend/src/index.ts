@@ -12,11 +12,11 @@ import { errorHandler, notFound } from './middleware/error';
 import { requestLogger } from './middleware/logger';
 import { ensureDatabase } from './utils/dbSetup';
 import { loadEnv } from './utils/env';
-import { eventBus } from './services/eventBusService';
 import { setupNotificationHandler } from './handlers/notificationHandler';
 import { verifyJWT } from './utils/jwt';
 import { correlationMiddleware, getCorrelationId } from '@ashok92/correlation-id';
 import { logger } from './utils/logger';
+import { setupApiDocs } from './utils/apiDocs';
 
 loadEnv();
 
@@ -114,6 +114,7 @@ app.use(cors());
 app.use(express.json());
 app.use(correlationMiddleware());
 app.use(requestLogger);
+setupApiDocs(app);
 
 // Routes
 app.use('/api/auth', authRoutes);
